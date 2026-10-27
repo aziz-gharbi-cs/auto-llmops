@@ -1,0 +1,4 @@
+aws_region       = "us-east-1"
+bucket_suffix    = "prod-company"
+cluster_role_arn = "arn:aws:iam::123456789012:role/prod-eks-cluster-role"
+node_role_arn    = "arn:aws:iam::123456789012:role/prod-eks-node-role"
