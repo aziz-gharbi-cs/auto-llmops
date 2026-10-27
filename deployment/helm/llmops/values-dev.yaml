@@ -1,0 +1,33 @@
+# Development environment values
+global:
+  environment: development
+
+api:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  podDisruptionBudget:
+    enabled: false
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+  env:
+    LOG_LEVEL: "DEBUG"
+    ACTIVE_MODEL_VERSION: "gemma-3-lora-v1"
+    STORAGE_BACKEND: "local"
+
+inference:
+  enabled: false  # Use mock or shared CPU runtime in dev
+
+ingress:
+  hosts:
+    - host: dev.llmops.local
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 8000
+  tls: []

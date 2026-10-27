@@ -1,0 +1,18 @@
+{{- if .Values.inference.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "llmops.fullname" . }}-inference
+  labels:
+    {{- include "llmops.labels" . | nindent 4 }}
+    app.kubernetes.io/component: inference
+spec:
+  type: {{ .Values.inference.service.type }}
+  ports:
+    - port: {{ .Values.inference.service.port }}
+      targetPort: {{ .Values.inference.service.targetPort }}
+      protocol: TCP
+      name: http-inference
+  selector:
+    {{- include "llmops.inference.selectorLabels" . | nindent 4 }}
+{{- end }}

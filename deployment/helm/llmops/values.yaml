@@ -1,0 +1,105 @@
+# Default values for llmops chart
+global:
+  environment: production
+  imageRegistry: ghcr.io/company
+
+api:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: ghcr.io/company/llmops-api
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 75
+    targetMemoryUtilizationPercentage: 80
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 2
+  env:
+    LOG_LEVEL: "INFO"
+    ACTIVE_MODEL_VERSION: "gemma-3-lora-v1"
+    QDRANT_HOST: "qdrant"
+    QDRANT_PORT: "6333"
+    STORAGE_BACKEND: "s3"
+
+inference:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/company/llmops-inference
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8001
+    targetPort: 8001
+  resources:
+    limits:
+      nvidia.com/gpu: "1"
+      cpu: "4000m"
+      memory: "16Gi"
+    requests:
+      nvidia.com/gpu: "1"
+      cpu: "2000m"
+      memory: "8Gi"
+  nodeSelector:
+    accelerator: "nvidia-gpu"
+  tolerations:
+    - key: "nvidia.com/gpu"
+      operator: "Exists"
+      effect: "NoSchedule"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "2m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: llmops.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 8000
+  tls:
+    - secretName: llmops-tls-cert
+      hosts:
+        - llmops.example.com
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001

@@ -1,0 +1,51 @@
+# Production environment values
+global:
+  environment: production
+
+api:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 75
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+  resources:
+    limits:
+      cpu: "4000m"
+      memory: "8Gi"
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+  env:
+    LOG_LEVEL: "INFO"
+    ACTIVE_MODEL_VERSION: "gemma-3-lora-v1"
+    STORAGE_BACKEND: "s3"
+
+inference:
+  enabled: true
+  replicaCount: 2
+  resources:
+    limits:
+      nvidia.com/gpu: "1"
+      cpu: "8000m"
+      memory: "32Gi"
+    requests:
+      nvidia.com/gpu: "1"
+      cpu: "4000m"
+      memory: "16Gi"
+
+ingress:
+  hosts:
+    - host: api.llmops.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 8000
+  tls:
+    - secretName: llmops-prod-tls
+      hosts:
+        - api.llmops.example.com

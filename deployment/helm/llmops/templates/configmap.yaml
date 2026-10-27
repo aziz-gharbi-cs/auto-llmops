@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "llmops.fullname" . }}-config
+  labels:
+    {{- include "llmops.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.global.environment | quote }}
+  LOG_LEVEL: {{ .Values.api.env.LOG_LEVEL | default "INFO" | quote }}
+  ACTIVE_MODEL_VERSION: {{ .Values.api.env.ACTIVE_MODEL_VERSION | default "gemma-3-lora-v1" | quote }}
+  QDRANT_HOST: {{ .Values.api.env.QDRANT_HOST | default "qdrant" | quote }}
+  QDRANT_PORT: {{ .Values.api.env.QDRANT_PORT | default "6333" | quote }}
+  STORAGE_BACKEND: {{ .Values.api.env.STORAGE_BACKEND | default "s3" | quote }}
