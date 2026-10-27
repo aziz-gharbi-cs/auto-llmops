@@ -2,50 +2,32 @@
 
 **Master Specification Source of Truth:** [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md)  
 **Status:** In Progress  
-**Current Milestone:** Milestone 0 (Repository Foundation)
+**Current Milestone:** Milestone 2 (Processing: Parsing, Normalization, Chunking, Deduplication)
 
 ---
 
 ## 1. Project Baseline & Gap Analysis
 
 ### Current State
-- Repository newly initialized (`git init -b main`).
-- Contains `antigravity_llmops_master_build_spec.md` setting architectural contracts, quality gates, and milestone definitions.
-- Local environment: Python 3.13.3, Git 2.49, uv 0.13.6, Ruff 0.17.3, mypy 2.4.0, pytest 9.1.1, PyTorch 2.7.1, Transformers 4.53.2, SQLAlchemy 2.0.51, Psycopg 3.3.4.
-
-### Missing & Incomplete Components
-- Complete repository skeleton (`src/llmops`, `configs/`, `prompts/`, `tests/`, `pipelines/`, `deployment/`, etc.).
-- Dependency configuration (`pyproject.toml`, lockfile, tool configs).
-- Codebase foundations: domain models, interfaces, infrastructure adapters.
-- Data acquisition, processing, RAG, curation, training, evaluation, serving, observability, and deployment pipelines.
+- Repository initialized on `main`.
+- Master specification in [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md).
+- Python 3.13 environment configured with uv, ruff, mypy, pytest, pydantic v2, httpx, beautifulsoup4.
+- Milestone 0 completed: repository skeleton, `pyproject.toml`, quality gates (`make check`, `scripts/check.ps1`), CI workflow, ADR 001 and ADR 002.
+- Milestone 1 completed: configuration-driven crawler with SSRF safety, robots.txt parsing, SHA-256 raw snapshots, crawl manifests, canonical document models, unit and contract tests (100% green).
 
 ---
 
 ## 2. Milestone Roadmap
 
-### Milestone 0: Repository Foundation (Current)
+### Milestone 0: Repository Foundation [COMPLETED]
 - **Goal:** Establish production-grade Python package structure, development tools, linting/typing/testing gates, and baseline CI.
-- **Tasks:**
-  - Create directory layout according to Section 50 of spec.
-  - Configure `pyproject.toml` with `uv` build backend (hatchling), dependencies, dependency groups (`dev`, `test`, `inference`, `training`, `docs`), and tool configurations for Ruff, mypy, pytest, and coverage.
-  - Implement `.gitignore`, `.pre-commit-config.yaml`, `.env.example`.
-  - Create `Makefile` (and Windows PowerShell equivalent `check.ps1`) for `lint`, `typecheck`, `test`, `check`, `format`.
-  - Setup GitHub Actions CI workflow (`.github/workflows/ci.yml`).
-  - Add initial ADRs (`docs/decisions/001-python-runtime.md`, etc.).
-  - Add smoke unit test and package verification.
-- **Acceptance Criteria:** `make check` (or `./check.ps1`) runs `ruff check`, `ruff format --check`, `mypy`, and `pytest` with 100% green exit code.
+- **Status:** Done (26 files, tests passing, 0 lint/type issues).
 
-### Milestone 1: Source Acquisition (Crawler & Raw Storage)
+### Milestone 1: Source Acquisition [COMPLETED]
 - **Goal:** Configuration-driven documentation acquisition for FastAPI, Pydantic, and SQLAlchemy with domain allowlists, robots respect, SSRF safety, rate-limiting, and raw snapshot manifests.
-- **Tasks:**
-  - Create `configs/ingestion.yaml` defining sources, allowed domains, max page sizes, rate limits.
-  - Implement `src/llmops/domain/models/document.py` (canonical `Document` entity, sections, provenance metadata).
-  - Implement crawler service (`src/llmops/infrastructure/crawler/`) with SSRF protection, robots.txt parser, exponential backoff, retry mechanisms.
-  - Implement crawler manifest generator and raw snapshot writer (`data/raw/`).
-  - Unit and contract tests for crawler safety, allowlist enforcement, and canonical model serialization.
-- **Acceptance Criteria:** Crawling downloads allowed documentation, rejects disallowed domains/SSRF targets, stores raw HTML/markdown with SHA-256 hashes, and outputs valid manifests.
+- **Status:** Done (Crawler service, SSRF guard, manifest contract, canonical document model, 25 tests passing).
 
-### Milestone 2: Processing (Parsing, Normalization, Chunking, Deduplication)
+### Milestone 2: Processing (Parsing, Normalization, Chunking, Deduplication) [IN PROGRESS]
 - **Goal:** Transform raw snapshots into canonical cleaned documents and semantic chunks with deduplication and quality reporting.
 - **Tasks:**
   - HTML/Markdown parser converting raw crawl into canonical `Document` instances.
