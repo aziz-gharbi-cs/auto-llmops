@@ -2,7 +2,7 @@
 
 **Master Specification Source of Truth:** [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md)  
 **Status:** In Progress  
-**Current Milestone:** Milestone 3 (DVC & Dataset Versioning & Object Storage)
+**Current Milestone:** Milestone 4 (Vector Retrieval Subsystem: Embeddings, Qdrant, Reranker)
 
 ---
 
@@ -11,10 +11,11 @@
 ### Current State
 - Repository initialized on `main`.
 - Master specification in [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md).
-- Python 3.13 environment configured with uv, ruff, mypy, pytest, pydantic v2, httpx, beautifulsoup4.
+- Python 3.13 environment configured with uv, ruff, mypy, pytest, pydantic v2, httpx, beautifulsoup4, boto3.
 - Milestone 0 completed: repository skeleton, `pyproject.toml`, quality gates (`make check`, `scripts/check.ps1`), CI workflow, ADR 001 and ADR 002.
 - Milestone 1 completed: configuration-driven crawler with SSRF safety, robots.txt parsing, SHA-256 raw snapshots, crawl manifests, canonical document models, unit and contract tests.
-- Milestone 2 completed: text normalization, HTML/Markdown parsing with code-block preservation, heading-aware semantic chunking with provenance, exact (SHA-256) and near-duplicate (Jaccard) deduplication, dataset quality reporting (40 tests passing, 82% coverage).
+- Milestone 2 completed: text normalization, HTML/Markdown parsing with code-block preservation, heading-aware semantic chunking with provenance, exact (SHA-256) and near-duplicate (Jaccard) deduplication, dataset quality reporting.
+- Milestone 3 completed: `BaseStorage` port, `LocalStorageAdapter`, `S3StorageAdapter` with MinIO/S3 support, storage factory, `DatasetVersionManifest`, DVC pipeline (`dvc.yaml`, `params.yaml`), ADR 003, storage contract tests (46 tests passing, 82% coverage).
 
 ---
 
@@ -32,7 +33,11 @@
 - **Goal:** Transform raw snapshots into canonical cleaned documents and semantic chunks with deduplication and quality reporting.
 - **Status:** Done (HTML parser with code fences, semantic chunker with provenance, deduplicator, quality reporter, integration pipeline, 40 tests passing).
 
-### Milestone 3: Dataset Versioning & Object Storage (DVC & S3/MinIO) [CURRENT]
+### Milestone 3: Dataset Versioning & Object Storage (DVC & S3/MinIO) [COMPLETED]
+- **Goal:** Abstract object storage interface, local/S3 adapters, and DVC pipeline for immutable versioned datasets.
+- **Status:** Done (BaseStorage port, Local & S3 adapters, DatasetVersionManifest, dvc.yaml, params.yaml, ADR 003, contract tests, 46 tests passing).
+
+### Milestone 4: Vector Retrieval Subsystem (Embeddings, Qdrant, Reranker) [CURRENT]
 - **Goal:** Transform raw snapshots into canonical cleaned documents and semantic chunks with deduplication and quality reporting.
 - **Tasks:**
   - HTML/Markdown parser converting raw crawl into canonical `Document` instances.
