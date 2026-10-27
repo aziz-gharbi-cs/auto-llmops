@@ -1,0 +1,13 @@
+name: "rag_grounded_answer"
+version: "1.0.0"
+description: "RAG prompt formatting retrieved documentation chunks into structured context."
+template: |
+  Documentation Context:
+  {context}
+
+  User Question:
+  {question}
+
+  Instructions:
+  Answer the question accurately using the documentation context above.
+  Cite the relevant source chunk IDs in your explanation. If the context does not answer the question, state that evidence is insufficient.
