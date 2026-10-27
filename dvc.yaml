@@ -1,0 +1,28 @@
+stages:
+  acquire:
+    cmd: python -m llmops.interfaces.cli ingest --config configs/ingestion.yaml
+    deps:
+      - configs/ingestion.yaml
+      - src/llmops/infrastructure/crawler/
+    outs:
+      - data/raw:
+          persist: true
+
+  process:
+    cmd: python -m llmops.interfaces.cli validate --dataset-path data/processed
+    deps:
+      - data/raw
+      - src/llmops/infrastructure/parser/
+      - src/llmops/infrastructure/chunker/
+    params:
+      - processing.target_chunk_size
+      - processing.max_chunk_size
+      - processing.near_duplicate_threshold
+    outs:
+      - data/interim/documents.jsonl:
+          persist: true
+      - data/processed/chunks.jsonl:
+          persist: true
+    metrics:
+      - data/processed/quality_report.json:
+          cache: false

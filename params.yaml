@@ -1,0 +1,40 @@
+# Pipeline configuration parameters for DVC stages
+
+ingestion:
+  config_path: "configs/ingestion.yaml"
+  storage_dir: "data/raw"
+  sources:
+    - "fastapi"
+    - "pydantic"
+    - "sqlalchemy"
+
+processing:
+  raw_dir: "data/raw"
+  interim_dir: "data/interim"
+  processed_dir: "data/processed"
+  dataset_version: "v1.0.0"
+  target_chunk_size: 400
+  max_chunk_size: 600
+  near_duplicate_threshold: 0.85
+
+embeddings:
+  provider: "sentence_transformers"
+  model: "sentence-transformers/all-MiniLM-L6-v2"
+  dimensions: 384
+  normalize: true
+
+training:
+  base_model: "google/gemma-3-1b-it"
+  profile: "smoke"
+  seed: 42
+  lora:
+    rank: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+  hyperparameters:
+    learning_rate: 0.0002
+    batch_size: 2
+    gradient_accumulation_steps: 4
+    epochs: 1
+    max_seq_length: 512
