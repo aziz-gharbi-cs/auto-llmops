@@ -74,6 +74,8 @@ Thumbs.db
 checkpoints/
 mlruns/
 .mlflow/
+artifacts/*
+!artifacts/.gitkeep
 
 # Large dataset files (managed by DVC)
 data/raw/*

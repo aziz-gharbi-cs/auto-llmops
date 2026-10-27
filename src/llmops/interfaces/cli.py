@@ -111,6 +111,12 @@ def create_parser() -> argparse.ArgumentParser:
         default="configs/training.yaml",
         help="Path to training configuration file.",
     )
+    train_p.add_argument(
+        "--dataset-dir",
+        type=str,
+        default="data/processed",
+        help="Path to directory containing train.jsonl and val.jsonl.",
+    )
 
     # Evaluate command
     eval_p = subparsers.add_parser(
@@ -258,6 +264,39 @@ def main(args: Sequence[str] | None = None) -> int:
             f"[llmops] Curation complete: {summary.passed_candidates}/{summary.total_candidates} "
             f"passed ({summary.pass_rate * 100:.1f}%). "
             f"Train: {summary.train_count}, Val: {summary.val_count}, Test: {summary.test_count}."
+        )
+        return 0
+
+    if parsed_args.command == "train":
+        from pathlib import Path
+
+        from llmops.application.use_cases.train_model import TrainModelUseCase
+        from llmops.infrastructure.training.mlflow_tracker import MLflowTracker
+
+        print(
+            f"[llmops] Starting model fine-tuning with profile '{parsed_args.profile}' "
+            f"from config '{parsed_args.config}'..."
+        )
+        train_use_case = TrainModelUseCase(tracker=MLflowTracker())
+        config = train_use_case.load_config(
+            config_path=parsed_args.config,
+            profile_override=parsed_args.profile,
+        )
+
+        dataset_path = Path(parsed_args.dataset_dir)
+        train_file = dataset_path / "train.jsonl"
+        val_file = dataset_path / "val.jsonl"
+
+        result, _model_manifest = train_use_case.execute(
+            config=config,
+            train_dataset_path=train_file,
+            val_dataset_path=val_file if val_file.exists() else None,
+        )
+        print(
+            f"[llmops] Training complete: model version '{result.model_version}' "
+            f"(run ID: {result.run_id}). "
+            f"Final train loss: {result.final_train_loss:.4f}. "
+            f"Adapter saved to '{result.adapter_dir}'."
         )
         return 0
 

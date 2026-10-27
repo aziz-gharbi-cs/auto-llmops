@@ -36,3 +36,11 @@ class ModelInferenceError(LLMOpsError):
 
 class QualityGateError(LLMOpsError):
     """Raised when a candidate model or dataset fails to pass quality thresholds."""
+
+
+class HardwareNotSupportedError(LLMOpsError):
+    """Raised when the execution profile is unsupported on current hardware (Section 79)."""
+
+
+class TrainingExecutionError(LLMOpsError):
+    """Raised when a model training or adapter export process fails."""

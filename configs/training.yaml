@@ -1,0 +1,46 @@
+# Training and LoRA fine-tuning configuration for Gemma 3
+# Conforms to Section 10, 21, and 81 of the Master Build Specification
+
+base_model: "google/gemma-3-1b-it"
+base_model_revision: "main"
+dataset_version: "v1"
+output_dir: "artifacts/models/gemma-3-lora"
+
+lora:
+  r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+hyperparameters:
+  learning_rate: 0.0002
+  batch_size: 2
+  gradient_accumulation_steps: 4
+  num_epochs: 3
+  max_seq_length: 1024
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  lr_scheduler_type: "cosine"
+  optimizer: "adamw_8bit"
+  seed: 42
+
+profiles:
+  smoke:
+    num_epochs: 1
+    batch_size: 1
+    max_seq_length: 128
+    simulated: true
+  full:
+    num_epochs: 3
+    batch_size: 2
+    max_seq_length: 1024
+    simulated: false
