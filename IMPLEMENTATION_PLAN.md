@@ -2,7 +2,7 @@
 
 **Master Specification Source of Truth:** [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md)  
 **Status:** In Progress  
-**Current Milestone:** Milestone 2 (Processing: Parsing, Normalization, Chunking, Deduplication)
+**Current Milestone:** Milestone 3 (DVC & Dataset Versioning & Object Storage)
 
 ---
 
@@ -13,7 +13,8 @@
 - Master specification in [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md).
 - Python 3.13 environment configured with uv, ruff, mypy, pytest, pydantic v2, httpx, beautifulsoup4.
 - Milestone 0 completed: repository skeleton, `pyproject.toml`, quality gates (`make check`, `scripts/check.ps1`), CI workflow, ADR 001 and ADR 002.
-- Milestone 1 completed: configuration-driven crawler with SSRF safety, robots.txt parsing, SHA-256 raw snapshots, crawl manifests, canonical document models, unit and contract tests (100% green).
+- Milestone 1 completed: configuration-driven crawler with SSRF safety, robots.txt parsing, SHA-256 raw snapshots, crawl manifests, canonical document models, unit and contract tests.
+- Milestone 2 completed: text normalization, HTML/Markdown parsing with code-block preservation, heading-aware semantic chunking with provenance, exact (SHA-256) and near-duplicate (Jaccard) deduplication, dataset quality reporting (40 tests passing, 82% coverage).
 
 ---
 
@@ -27,7 +28,11 @@
 - **Goal:** Configuration-driven documentation acquisition for FastAPI, Pydantic, and SQLAlchemy with domain allowlists, robots respect, SSRF safety, rate-limiting, and raw snapshot manifests.
 - **Status:** Done (Crawler service, SSRF guard, manifest contract, canonical document model, 25 tests passing).
 
-### Milestone 2: Processing (Parsing, Normalization, Chunking, Deduplication) [IN PROGRESS]
+### Milestone 2: Processing (Parsing, Normalization, Chunking, Deduplication) [COMPLETED]
+- **Goal:** Transform raw snapshots into canonical cleaned documents and semantic chunks with deduplication and quality reporting.
+- **Status:** Done (HTML parser with code fences, semantic chunker with provenance, deduplicator, quality reporter, integration pipeline, 40 tests passing).
+
+### Milestone 3: Dataset Versioning & Object Storage (DVC & S3/MinIO) [CURRENT]
 - **Goal:** Transform raw snapshots into canonical cleaned documents and semantic chunks with deduplication and quality reporting.
 - **Tasks:**
   - HTML/Markdown parser converting raw crawl into canonical `Document` instances.
