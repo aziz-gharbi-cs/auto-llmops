@@ -2,7 +2,7 @@
 
 **Master Specification Source of Truth:** [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md)  
 **Status:** In Progress  
-**Current Milestone:** Milestone 5 (Local Generation & RAG Subsystem)
+**Current Milestone:** Milestone 6 (Data Curation & LLM-as-a-Judge)
 
 ---
 
@@ -16,7 +16,8 @@
 - Milestone 1 completed: configuration-driven crawler with SSRF safety, robots.txt parsing, SHA-256 raw snapshots, crawl manifests, canonical document models, unit and contract tests.
 - Milestone 2 completed: text normalization, HTML/Markdown parsing with code-block preservation, heading-aware semantic chunking with provenance, exact (SHA-256) and near-duplicate (Jaccard) deduplication, dataset quality reporting.
 - Milestone 3 completed: `BaseStorage` port, `LocalStorageAdapter`, `S3StorageAdapter` with MinIO/S3 support, storage factory, `DatasetVersionManifest`, DVC pipeline (`dvc.yaml`, `params.yaml`), ADR 003, storage contract tests.
-- Milestone 4 completed: `BaseVectorStore`, `BaseEmbeddingModel`, `BaseReranker` ports, `QdrantVectorStore` with Qdrant REST API + Section 6 schema, `InMemoryVectorStore`, `SentenceTransformerEmbeddings`, `CrossEncoderReranker`, two-stage `RetrievalService`, IR metrics (Recall@K, Precision@K, MRR, nDCG), contract and unit tests (61 tests passing, 81% coverage).
+- Milestone 4 completed: `BaseVectorStore`, `BaseEmbeddingModel`, `BaseReranker` ports, `QdrantVectorStore` with Qdrant REST API + Section 6 schema, `InMemoryVectorStore`, `SentenceTransformerEmbeddings`, `CrossEncoderReranker`, two-stage `RetrievalService`, IR metrics (Recall@K, Precision@K, MRR, nDCG), contract and unit tests.
+- Milestone 5 completed: `BaseLLMClient` port, `OllamaClient`, `VLLMClient`, `MockLLMClient`, versioned prompt management (`developer_assistant`, `rag_grounded_answer`), `RAGService` with citations and insufficient context detection, ADR 004, unit and contract tests (66 tests passing, 81% coverage).
 
 ---
 
@@ -42,7 +43,11 @@
 - **Goal:** Production-grade semantic search with Qdrant vector store, configurable embedding models, cross-encoder reranking, and retrieval metrics.
 - **Status:** Done (Qdrant & in-memory vector stores, SentenceTransformer embeddings, CrossEncoder reranker, RetrievalService, IR metrics, 61 tests passing).
 
-### Milestone 5: Local Generation & RAG Subsystem [CURRENT]
+### Milestone 5: Local Generation & RAG Subsystem [COMPLETED]
+- **Goal:** Integrate local LLM runtime (Ollama/vLLM) for grounded question-answering with citations and prompt versioning.
+- **Status:** Done (BaseLLMClient, Ollama & vLLM clients, PromptManager, versioned prompts, RAGService with citations and fallback, ADR 004, 66 tests passing).
+
+### Milestone 6: Data Curation & LLM-as-a-Judge [CURRENT]
 - **Goal:** Transform raw snapshots into canonical cleaned documents and semantic chunks with deduplication and quality reporting.
 - **Tasks:**
   - HTML/Markdown parser converting raw crawl into canonical `Document` instances.
