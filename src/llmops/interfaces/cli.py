@@ -187,6 +187,37 @@ def main(args: Sequence[str] | None = None) -> int:
         )
         return 0
 
+    if parsed_args.command == "embed":
+        import json
+        from pathlib import Path
+
+        from llmops.application.use_cases.retrieval_service import RetrievalService
+        from llmops.domain.models.document import DocumentChunk
+        from llmops.infrastructure.embeddings.sentence_transformer import (
+            SentenceTransformerEmbeddings,
+        )
+        from llmops.infrastructure.reranker.cross_encoder import CrossEncoderReranker
+        from llmops.infrastructure.vector.in_memory_store import InMemoryVectorStore
+
+        target_col = parsed_args.collection or "default"
+        print(f"[llmops] Embedding and indexing chunks into '{target_col}'...")
+        chunks_file = Path("data/processed/chunks.jsonl")
+        chunks: list[DocumentChunk] = []
+        if chunks_file.exists():
+            for line in chunks_file.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    chunks.append(DocumentChunk.model_validate(json.loads(line)))
+
+        service = RetrievalService(
+            vector_store=InMemoryVectorStore(),
+            embedding_model=SentenceTransformerEmbeddings(),
+            reranker=CrossEncoderReranker(),
+            default_collection=parsed_args.collection or "docs_fastapi_pydantic_sqlalchemy",
+        )
+        count = service.index_chunks(chunks)
+        print(f"[llmops] Indexing complete: {count} chunks indexed.")
+        return 0
+
     print(f"[llmops] Executing subcommand '{parsed_args.command}'...")
     return 0
 
