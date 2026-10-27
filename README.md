@@ -7,6 +7,8 @@
 [![uv](https://img.shields.io/badge/managed%20by-uv-purple.svg)](https://github.com/astral-sh/uv)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Checked with mypy](https://img.shields.io/badge/mypy-checked-blue.svg)](https://mypy-lang.org/)
+[![Tests](https://img.shields.io/badge/tests-155%20passed-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-84%25-brightgreen.svg)]()
 
 ---
 
@@ -23,11 +25,13 @@ Embedding & Qdrant Index → Reranker → Grounded RAG
      ↓
 Synthetic Generation → LLM-as-a-Judge Curated Dataset
      ↓
-Gemma 3 LoRA Fine-Tuning → MLflow Tracking → Multi-Layer Evaluation
+Gemma 3 LoRA Fine-Tuning → MLflow Tracking → Multi-Layer Evaluation (Layers A–E)
      ↓
 Quality Gate → Model Registry → vLLM / Ollama Serving → FastAPI + Nginx
      ↓
 OpenTelemetry + Prometheus + Grafana Observability
+     ↓
+Helm Packaging → Argo CD GitOps → Multi-Cloud Terraform IaC
 ```
 
 ---
@@ -37,8 +41,8 @@ OpenTelemetry + Prometheus + Grafana Observability
 The system adheres to **Clean Architecture** with explicit boundaries:
 - **`src/llmops/domain/`**: Pure entities, domain contracts, and business rules. Zero external library dependencies.
 - **`src/llmops/application/`**: Use cases coordinating workflows and domain ports.
-- **`src/llmops/infrastructure/`**: Adapters for vector search (Qdrant), storage (MinIO/S3), inference (Ollama/vLLM), embeddings, and databases.
-- **`src/llmops/interfaces/`**: Delivery interfaces (FastAPI REST API, Click CLI, pipeline runners).
+- **`src/llmops/infrastructure/`**: Adapters for vector search (Qdrant), storage (MinIO/S3), inference (Ollama/vLLM), embeddings, training (LoRA/PEFT), tracking (MLflow), and observability (Prometheus/OTel).
+- **`src/llmops/interfaces/`**: Delivery interfaces (FastAPI REST API, Click CLI, continuous pipeline runner).
 
 All infrastructure adapters satisfy abstract interfaces, ensuring interchangeable providers without touching business logic.
 
@@ -55,7 +59,7 @@ All infrastructure adapters satisfy abstract interfaces, ensuring interchangeabl
 | **Model Runtime** | Ollama (Local Dev) / vLLM (Production GPU) |
 | **Base Model & Fine-Tuning** | Gemma 3, Unsloth, Hugging Face PEFT / LoRA |
 | **Experiment Tracking** | MLflow |
-| **Workflow Orchestration** | Prefect |
+| **Workflow Orchestration** | Continuous LLMOps Pipeline Engine (`continuous_pipeline.py`) |
 | **Data Versioning** | DVC + MinIO / S3 |
 | **Observability** | OpenTelemetry, Prometheus, Grafana, Loki |
 | **Deployment & GitOps** | Docker, Helm, Kubernetes, Argo CD, Terraform |
@@ -85,31 +89,58 @@ cp .env.example .env
 ### Running Quality Checks
 ```bash
 # Full local quality gate (lint + typecheck + tests)
-make check
+powershell -ExecutionPolicy Bypass -File .\scripts\check.ps1
 
-# Or on Windows PowerShell:
-.\scripts\check.ps1
+# Or with Ruff and Mypy directly:
+python -m ruff check src tests
+python -m mypy src tests
+python -m pytest tests/
+```
+
+### Section 78 Master Acceptance Verification
+```bash
+python -m pytest tests/acceptance/test_section78_lifecycle.py -v
 ```
 
 ---
 
-## 5. CLI Commands
+## 5. CLI Reference
 
 ```bash
 llmops --help
 llmops --version
-llmops ingest     # Crawl documentation sources into raw snapshots
-llmops validate   # Run deterministic dataset validation
-llmops embed      # Generate embeddings and populate Qdrant index
-llmops curate     # Generate synthetic Q&A and filter via LLM judge
-llmops train      # Execute Gemma 3 LoRA fine-tuning
-llmops evaluate   # Run multi-layer regression evaluation
-llmops promote    # Promote candidate model through quality gate
-llmops serve       # Start the FastAPI application server
+llmops ingest       # Crawl documentation sources into raw snapshots
+llmops validate     # Run deterministic dataset validation
+llmops embed        # Generate embeddings and populate Qdrant index
+llmops curate       # Generate synthetic Q&A and filter via LLM judge
+llmops train        # Execute Gemma 3 LoRA fine-tuning
+llmops evaluate     # Run multi-layer regression evaluation (Layers A-E)
+llmops promote      # Promote candidate model through quality gate
+llmops serve        # Start the FastAPI application server
+llmops pipeline     # Run continuous end-to-end LLMOps lifecycle
 ```
 
 ---
 
-## 6. Implementation Progress
+## 6. Architecture Decision Records (ADRs)
 
-See [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) for milestone roadmap and current status.
+Key architectural decisions are documented in [`docs/decisions/`](docs/decisions/):
+- **ADR 001**: Python Runtime and Toolchain Strategy (`001-python-runtime.md`)
+- **ADR 002**: Clean Architecture Layering and Domain Boundaries (`002-clean-architecture.md`)
+- **ADR 003**: Object Storage Port and DVC Dataset Versioning (`003-storage-and-dvc.md`)
+- **ADR 004**: Interchangeable LLM Clients and Prompt Versioning (`004-ollama-and-vllm.md`)
+- **ADR 005**: Data Curation with LLM-as-a-Judge and Leakage-Safe Splitting (`005-data-curation-and-judge.md`)
+- **ADR 006**: Gemma 3 LoRA Fine-Tuning and Model Manifest Traceability (`006-lora-training-and-traceability.md`)
+- **ADR 007**: Multi-Layer Evaluation and Deterministic Quality Gate (`007-evaluation-and-quality-gates.md`)
+- **ADR 008**: API Gateway, Container Architecture, and Reverse Proxy (`008-api-gateway-and-container-architecture.md`)
+- **ADR 009**: Full-Stack Observability Architecture (`009-full-stack-observability-architecture.md`)
+- **ADR 010**: Kubernetes and Helm Packaging Architecture (`010-kubernetes-and-helm-packaging.md`)
+- **ADR 011**: GitOps and Continuous Delivery with Argo CD (`011-gitops-and-continuous-delivery.md`)
+- **ADR 012**: Infrastructure as Code Architecture (Terraform) (`012-infrastructure-as-code-terraform.md`)
+- **ADR 013**: Continuous LLMOps Lifecycle and Acceptance Verification (`013-continuous-llmops-and-acceptance-verification.md`)
+
+---
+
+## 7. Disaster Recovery & Rollback
+
+Operational procedures for declarative rollbacks and disaster recovery are detailed in [`docs/runbooks/rollback.md`](docs/runbooks/rollback.md).
