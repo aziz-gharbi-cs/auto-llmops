@@ -52,7 +52,7 @@ def test_cli_promote_command() -> None:
 
 def test_cli_main_execution(capsys: pytest.CaptureFixture[str]) -> None:
     """Verify executing main with a command outputs acknowledgment."""
-    exit_code = main(["ingest", "--source", "pydantic"])
+    exit_code = main(["validate", "--dataset-path", "data/processed"])
     assert exit_code == 0
     captured = capsys.readouterr()
-    assert "Executing subcommand 'ingest'" in captured.out
+    assert "Executing subcommand 'validate'" in captured.out

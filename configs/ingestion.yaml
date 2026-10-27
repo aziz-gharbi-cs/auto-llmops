@@ -1,0 +1,60 @@
+# Documentation Ingestion Configuration
+# Sources configuration drives the acquisition crawler and processing pipelines.
+
+version: "1.0.0"
+storage_dir: "data/raw"
+
+crawler_defaults:
+  user_agent: "AntigravityLLMOpsBot/1.0 (+https://github.com/example/llmops)"
+  timeout_seconds: 10
+  max_retries: 3
+  backoff_factor: 1.5
+  rate_limit_delay_seconds: 0.5
+  max_page_size_bytes: 5242880  # 5 MB
+  respect_robots_txt: true
+  allowed_content_types:
+    - "text/html"
+    - "text/plain"
+    - "text/markdown"
+
+sources:
+  - name: "fastapi"
+    type: "documentation"
+    base_url: "https://fastapi.tiangolo.com/"
+    allowed_domains:
+      - "fastapi.tiangolo.com"
+    seed_urls:
+      - "https://fastapi.tiangolo.com/"
+      - "https://fastapi.tiangolo.com/tutorial/"
+      - "https://fastapi.tiangolo.com/tutorial/first-steps/"
+      - "https://fastapi.tiangolo.com/tutorial/path-params/"
+      - "https://fastapi.tiangolo.com/tutorial/query-params/"
+      - "https://fastapi.tiangolo.com/tutorial/body/"
+      - "https://fastapi.tiangolo.com/tutorial/dependencies/"
+    max_pages: 50
+
+  - name: "pydantic"
+    type: "documentation"
+    base_url: "https://docs.pydantic.dev/latest/"
+    allowed_domains:
+      - "docs.pydantic.dev"
+    seed_urls:
+      - "https://docs.pydantic.dev/latest/"
+      - "https://docs.pydantic.dev/latest/concepts/models/"
+      - "https://docs.pydantic.dev/latest/concepts/fields/"
+      - "https://docs.pydantic.dev/latest/concepts/validators/"
+      - "https://docs.pydantic.dev/latest/concepts/types/"
+    max_pages: 50
+
+  - name: "sqlalchemy"
+    type: "documentation"
+    base_url: "https://docs.sqlalchemy.org/en/20/"
+    allowed_domains:
+      - "docs.sqlalchemy.org"
+    seed_urls:
+      - "https://docs.sqlalchemy.org/en/20/"
+      - "https://docs.sqlalchemy.org/en/20/tutorial/"
+      - "https://docs.sqlalchemy.org/en/20/tutorial/engine.html"
+      - "https://docs.sqlalchemy.org/en/20/tutorial/dbapi_transactions.html"
+      - "https://docs.sqlalchemy.org/en/20/orm/quickstart.html"
+    max_pages: 50

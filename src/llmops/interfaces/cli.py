@@ -159,6 +159,19 @@ def main(args: Sequence[str] | None = None) -> int:
         parser.print_help()
         return 0
 
+    if parsed_args.command == "ingest":
+        from llmops.application.use_cases.ingest_documentation import IngestDocumentationUseCase
+
+        print(f"[llmops] Starting ingestion from config '{parsed_args.config}'...")
+        use_case = IngestDocumentationUseCase(config_path=parsed_args.config)
+        manifests = use_case.execute(target_source=parsed_args.source)
+        for manifest in manifests:
+            print(
+                f"[llmops] Crawled '{manifest.source_name}': "
+                f"{manifest.total_pages_crawled} pages ({manifest.total_bytes} bytes)."
+            )
+        return 0
+
     print(f"[llmops] Executing subcommand '{parsed_args.command}'...")
     return 0
 
