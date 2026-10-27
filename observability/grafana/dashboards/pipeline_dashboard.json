@@ -1,0 +1,45 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "title": "Judge Curation Pass Rate (%)",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "llmops_judge_pass_rate",
+          "legendFormat": "Judge Pass %"
+        }
+      ]
+    },
+    {
+      "title": "Dataset Splits & Examples Count",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "llmops_dataset_size_examples",
+          "legendFormat": "{{split}}"
+        }
+      ]
+    },
+    {
+      "title": "Pipeline Execution Durations (Ingestion, Train, Eval)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "expr": "llmops_pipeline_duration_seconds",
+          "legendFormat": "{{stage}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["llmops", "pipeline", "curation"],
+  "time": { "from": "now-6h", "to": "now" },
+  "title": "LLMOps - Continuous Pipeline & Evaluation Dashboard"
+}

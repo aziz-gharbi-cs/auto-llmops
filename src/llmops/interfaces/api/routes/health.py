@@ -2,9 +2,10 @@
 
 import subprocess
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 
 from llmops import __version__
+from llmops.infrastructure.observability.metrics import registry
 from llmops.interfaces.api.schemas import HealthResponse, ReadinessResponse, VersionResponse
 from llmops.interfaces.api.security import Role, require_roles
 
@@ -67,3 +68,10 @@ def system_version(request: Request) -> VersionResponse:
         active_model=active_model,
         environment=getattr(request.app.state, "environment", "production"),
     )
+
+
+@router.get("/metrics")
+def prometheus_metrics() -> Response:
+    """Prometheus exposition endpoint serving Section 42 metrics."""
+    exposition = registry.generate_exposition()
+    return Response(content=exposition, media_type="text/plain; version=0.0.4; charset=utf-8")

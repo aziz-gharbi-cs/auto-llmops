@@ -9,6 +9,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
+from llmops.infrastructure.observability.metrics import registry
+from llmops.infrastructure.observability.tracer import tracer
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Enforces production HTTP security headers (Section 28)."""
@@ -56,17 +59,42 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
 
 
 class RequestTracingMiddleware(BaseHTTPMiddleware):
-    """Injects unique request ID and records execution latency."""
+    """Injects unique request ID, trace ID, and records Section 42 metrics and spans."""
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         request_id = request.headers.get("X-Request-ID") or f"req-{uuid.uuid4().hex[:12]}"
+        trace_id = request.headers.get("X-Trace-ID") or uuid.uuid4().hex
         start_time = time.perf_counter()
 
-        response = await call_next(request)
+        with tracer.start_span(
+            "api.request",
+            trace_id=trace_id,
+            attributes={"http.method": request.method, "http.target": request.url.path},
+        ):
+            response = await call_next(request)
 
-        duration_ms = (time.perf_counter() - start_time) * 1000.0
+        duration_sec = time.perf_counter() - start_time
+        duration_ms = duration_sec * 1000.0
+
+        # Record Section 42 Prometheus metrics
+        method = request.method
+        path = request.url.path
+        status_code = str(response.status_code)
+
+        registry.counter("request_count").inc(
+            labels={"method": method, "path": path, "status": status_code}
+        )
+        registry.histogram("request_latency").observe(
+            duration_sec, labels={"method": method, "path": path}
+        )
+        if response.status_code >= 400:
+            registry.counter("error_count").inc(
+                labels={"method": method, "path": path, "status": status_code}
+            )
+
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-Trace-ID"] = trace_id
         response.headers["X-Response-Time-Ms"] = f"{duration_ms:.2f}"
         return response

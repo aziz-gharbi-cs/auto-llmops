@@ -1,0 +1,49 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "title": "Retrieval Latency (p95)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(retrieval_latency_bucket[5m])) by (le))",
+          "legendFormat": "Retrieval p95"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(embedding_latency_bucket[5m])) by (le))",
+          "legendFormat": "Embedding p95"
+        }
+      ]
+    },
+    {
+      "title": "Top-K Retrieval Distribution",
+      "type": "bargauge",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(retrieval_latency_count[5m])) by (top_k)",
+          "legendFormat": "k={{top_k}}"
+        }
+      ]
+    },
+    {
+      "title": "Empty Retrieval Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(cache_hits[5m])) / (sum(rate(retrieval_latency_count[5m])) + 1e-6) * 100",
+          "legendFormat": "Cache Hit %"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["llmops", "retrieval", "vector"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "LLMOps - Retrieval & Vector Store Dashboard"
+}

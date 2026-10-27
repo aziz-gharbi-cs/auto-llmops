@@ -1,0 +1,53 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "panels": [
+    {
+      "title": "LLM Generation Latency (p90, p99)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.90, sum(rate(generation_latency_bucket[5m])) by (le, model))",
+          "legendFormat": "{{model}} - p90"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(generation_latency_bucket[5m])) by (le, model))",
+          "legendFormat": "{{model}} - p99"
+        }
+      ]
+    },
+    {
+      "title": "Token Throughput (Tokens / Sec)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(tokens_in[1m])) by (model)",
+          "legendFormat": "{{model}} - In"
+        },
+        {
+          "expr": "sum(rate(tokens_out[1m])) by (model)",
+          "legendFormat": "{{model}} - Out"
+        }
+      ]
+    },
+    {
+      "title": "Total Invocations & Active Model",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(model_requests) by (model)",
+          "legendFormat": "{{model}}"
+        }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["llmops", "llm", "gemma3"],
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "LLMOps - LLM Model & Inference Dashboard"
+}

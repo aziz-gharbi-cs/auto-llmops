@@ -1,6 +1,7 @@
 """Retrieval service orchestrating query embedding, top-N search, and reranking."""
 
 import logging
+import time
 from collections.abc import Sequence
 
 from llmops.domain.interfaces.embeddings import BaseEmbeddingModel
@@ -8,6 +9,8 @@ from llmops.domain.interfaces.reranker import BaseReranker
 from llmops.domain.interfaces.vector_store import BaseVectorStore
 from llmops.domain.models.document import DocumentChunk
 from llmops.domain.models.retrieval import RetrievalQuery, RetrievedChunk
+from llmops.infrastructure.observability.metrics import registry
+from llmops.infrastructure.observability.tracer import tracer
 
 logger = logging.getLogger(__name__)
 
@@ -65,10 +68,15 @@ class RetrievalService:
         collection_name: str | None = None,
     ) -> list[RetrievedChunk]:
         """Execute two-stage retrieval: top-N vector search followed by top-K reranking."""
+        t_start = time.perf_counter()
         col_name = collection_name or self.default_collection
 
         # Step 1: Compute query embedding
-        query_vector = self.embedding_model.embed_query(query.query_text)
+        t_embed_start = time.perf_counter()
+        with tracer.start_span("retrieval.embed", attributes={"query_len": len(query.query_text)}):
+            query_vector = self.embedding_model.embed_query(query.query_text)
+        embed_duration = time.perf_counter() - t_embed_start
+        registry.histogram("embedding_latency").observe(embed_duration)
 
         # Step 2: Prepare metadata filter
         filter_dict = None
@@ -78,19 +86,33 @@ class RetrievalService:
             }
 
         # Step 3: Top-N vector similarity retrieval
-        candidates = self.vector_store.search(
-            collection_name=col_name,
-            query_vector=query_vector,
-            limit=query.top_n,
-            filter_criteria=filter_dict,
-        )
+        with tracer.start_span(
+            "retrieval.search",
+            attributes={"collection": col_name, "top_n": query.top_n},
+        ):
+            candidates = self.vector_store.search(
+                collection_name=col_name,
+                query_vector=query_vector,
+                limit=query.top_n,
+                filter_criteria=filter_dict,
+            )
 
         if not candidates:
+            total_duration = time.perf_counter() - t_start
+            registry.histogram("retrieval_latency").observe(total_duration)
             return []
 
         # Step 4: Second-stage reranking (top-K)
-        return self.reranker.rerank(
-            query=query.query_text,
-            chunks=candidates,
-            top_k=query.top_k,
-        )
+        with tracer.start_span(
+            "retrieval.rerank",
+            attributes={"candidates_count": len(candidates), "top_k": query.top_k},
+        ):
+            results = self.reranker.rerank(
+                query=query.query_text,
+                chunks=candidates,
+                top_k=query.top_k,
+            )
+
+        total_duration = time.perf_counter() - t_start
+        registry.histogram("retrieval_latency").observe(total_duration)
+        return results

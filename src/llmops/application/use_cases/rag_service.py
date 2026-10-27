@@ -1,6 +1,7 @@
 """RAG service executing retrieval, prompt assembly, and grounded generation."""
 
 import logging
+import time
 import uuid
 
 from llmops.application.use_cases.retrieval_service import RetrievalService
@@ -8,6 +9,8 @@ from llmops.domain.interfaces.llm import BaseLLMClient
 from llmops.domain.models.rag import Citation, RAGRequest, RAGResponse
 from llmops.domain.models.retrieval import RetrievalFilter, RetrievalQuery, RetrievedChunk
 from llmops.domain.services.prompt_manager import PromptManager
+from llmops.infrastructure.observability.metrics import registry
+from llmops.infrastructure.observability.tracer import tracer
 
 logger = logging.getLogger(__name__)
 
@@ -98,10 +101,28 @@ class RAGService:
         ]
 
         # 4. Generate grounded answer
-        answer = self.llm_client.generate(
-            messages=messages,
-            temperature=request.temperature,
-            max_tokens=request.max_tokens,
+        t_gen_start = time.perf_counter()
+        registry.counter("model_requests").inc(labels={"model": self.llm_client.model_name})
+        # Estimate input tokens
+        approx_tokens_in = sum(len(m.get("content", "").split()) for m in messages)
+        registry.counter("tokens_in").inc(
+            approx_tokens_in, labels={"model": self.llm_client.model_name}
+        )
+
+        with tracer.start_span("llm.generate", attributes={"model": self.llm_client.model_name}):
+            answer = self.llm_client.generate(
+                messages=messages,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+            )
+
+        gen_duration = time.perf_counter() - t_gen_start
+        registry.histogram("generation_latency").observe(
+            gen_duration, labels={"model": self.llm_client.model_name}
+        )
+        approx_tokens_out = len(answer.split())
+        registry.counter("tokens_out").inc(
+            approx_tokens_out, labels={"model": self.llm_client.model_name}
         )
 
         # 5. Build citations
