@@ -146,6 +146,12 @@ def test_api_security_headers_and_tracing() -> None:
     assert resp_sec.headers["Content-Security-Policy"] == "default-src 'self'"
     assert resp_sec.headers["Referrer-Policy"] == "no-referrer"
 
+    # Verify Swagger docs route has relaxed CSP for CDN stylesheets and scripts
+    req_docs = create_mock_request("/docs")
+    resp_docs = run_sync(sec_mw.dispatch(req_docs, dummy_call_next))
+    assert "cdn.jsdelivr.net" in resp_docs.headers["Content-Security-Policy"]
+    assert "unsafe-inline" in resp_docs.headers["Content-Security-Policy"]
+
     # Request tracing middleware
     trace_mw = RequestTracingMiddleware(app=dummy_app)
     resp_trace = run_sync(trace_mw.dispatch(req, dummy_call_next))
