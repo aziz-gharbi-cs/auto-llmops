@@ -2,7 +2,7 @@
 
 **Master Specification Source of Truth:** [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md)  
 **Status:** In Progress  
-**Current Milestone:** Milestone 4 (Vector Retrieval Subsystem: Embeddings, Qdrant, Reranker)
+**Current Milestone:** Milestone 5 (Local Generation & RAG Subsystem)
 
 ---
 
@@ -15,7 +15,8 @@
 - Milestone 0 completed: repository skeleton, `pyproject.toml`, quality gates (`make check`, `scripts/check.ps1`), CI workflow, ADR 001 and ADR 002.
 - Milestone 1 completed: configuration-driven crawler with SSRF safety, robots.txt parsing, SHA-256 raw snapshots, crawl manifests, canonical document models, unit and contract tests.
 - Milestone 2 completed: text normalization, HTML/Markdown parsing with code-block preservation, heading-aware semantic chunking with provenance, exact (SHA-256) and near-duplicate (Jaccard) deduplication, dataset quality reporting.
-- Milestone 3 completed: `BaseStorage` port, `LocalStorageAdapter`, `S3StorageAdapter` with MinIO/S3 support, storage factory, `DatasetVersionManifest`, DVC pipeline (`dvc.yaml`, `params.yaml`), ADR 003, storage contract tests (46 tests passing, 82% coverage).
+- Milestone 3 completed: `BaseStorage` port, `LocalStorageAdapter`, `S3StorageAdapter` with MinIO/S3 support, storage factory, `DatasetVersionManifest`, DVC pipeline (`dvc.yaml`, `params.yaml`), ADR 003, storage contract tests.
+- Milestone 4 completed: `BaseVectorStore`, `BaseEmbeddingModel`, `BaseReranker` ports, `QdrantVectorStore` with Qdrant REST API + Section 6 schema, `InMemoryVectorStore`, `SentenceTransformerEmbeddings`, `CrossEncoderReranker`, two-stage `RetrievalService`, IR metrics (Recall@K, Precision@K, MRR, nDCG), contract and unit tests (61 tests passing, 81% coverage).
 
 ---
 
@@ -37,7 +38,11 @@
 - **Goal:** Abstract object storage interface, local/S3 adapters, and DVC pipeline for immutable versioned datasets.
 - **Status:** Done (BaseStorage port, Local & S3 adapters, DatasetVersionManifest, dvc.yaml, params.yaml, ADR 003, contract tests, 46 tests passing).
 
-### Milestone 4: Vector Retrieval Subsystem (Embeddings, Qdrant, Reranker) [CURRENT]
+### Milestone 4: Vector Retrieval Subsystem (Embeddings, Qdrant, Reranker) [COMPLETED]
+- **Goal:** Production-grade semantic search with Qdrant vector store, configurable embedding models, cross-encoder reranking, and retrieval metrics.
+- **Status:** Done (Qdrant & in-memory vector stores, SentenceTransformer embeddings, CrossEncoder reranker, RetrievalService, IR metrics, 61 tests passing).
+
+### Milestone 5: Local Generation & RAG Subsystem [CURRENT]
 - **Goal:** Transform raw snapshots into canonical cleaned documents and semantic chunks with deduplication and quality reporting.
 - **Tasks:**
   - HTML/Markdown parser converting raw crawl into canonical `Document` instances.
