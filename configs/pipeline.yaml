@@ -1,0 +1,31 @@
+# Continuous LLMOps Pipeline Configuration (Section 77/78)
+version: "1.0.0"
+
+sources:
+  - name: "fastapi"
+    url: "https://fastapi.tiangolo.com"
+  - name: "pydantic"
+    url: "https://docs.pydantic.dev"
+  - name: "sqlalchemy"
+    url: "https://docs.sqlalchemy.org"
+
+retraining_policy:
+  # Retrain only if dataset has meaningful changes or force_retrain is enabled
+  force_retrain: false
+  min_new_examples_threshold: 10
+  allowed_quality_regression_max: 0.05
+
+training:
+  profile: "smoke"
+  config_path: "configs/training.yaml"
+  base_model: "google/gemma-3-1b-it"
+
+evaluation:
+  benchmark_dataset: "data/curated/test.jsonl"
+  min_groundedness_score: 3.5
+  min_retrieval_mrr: 0.60
+  min_citation_f1: 0.70
+
+output:
+  checkpoints_dir: "models/checkpoints"
+  reports_dir: "reports/evaluation"

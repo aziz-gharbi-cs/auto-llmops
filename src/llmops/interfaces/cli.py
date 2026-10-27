@@ -195,6 +195,35 @@ def create_parser() -> argparse.ArgumentParser:
         help="Enable auto-reload for local development.",
     )
 
+    # Pipeline command
+    pipeline_p = subparsers.add_parser(
+        "pipeline",
+        help="Run end-to-end continuous LLMOps lifecycle.",
+    )
+    pipeline_p.add_argument(
+        "--raw-dir",
+        type=str,
+        default="data/raw",
+        help="Path to directory containing raw documentation files.",
+    )
+    pipeline_p.add_argument(
+        "--output-dir",
+        type=str,
+        default="artifacts/continuous_pipeline",
+        help="Path to directory where continuous artifacts will be saved.",
+    )
+    pipeline_p.add_argument(
+        "--profile",
+        choices=["smoke", "full"],
+        default="smoke",
+        help="Hardware training profile.",
+    )
+    pipeline_p.add_argument(
+        "--force-retrain",
+        action="store_true",
+        help="Force execution of training stage regardless of dataset diff.",
+    )
+
     return parser
 
 
@@ -382,6 +411,31 @@ def main(args: Sequence[str] | None = None) -> int:
             app,
             host=parsed_args.host,
             port=parsed_args.port,
+        )
+        return 0
+
+    if parsed_args.command == "pipeline":
+        from llmops.application.use_cases.continuous_pipeline import ContinuousLLMOpsPipeline
+        from llmops.infrastructure.storage.factory import create_storage
+
+        print(
+            f"[llmops] Starting Continuous LLMOps Pipeline (profile={parsed_args.profile}, "
+            f"force_retrain={parsed_args.force_retrain})..."
+        )
+        storage = create_storage("local", base_dir=parsed_args.raw_dir)
+        pipeline = ContinuousLLMOpsPipeline(
+            storage=storage,
+            output_dir=parsed_args.output_dir,
+        )
+        res = pipeline.run_lifecycle(
+            raw_documents_dir=parsed_args.raw_dir,
+            force_retrain=parsed_args.force_retrain,
+            training_profile=parsed_args.profile,
+        )
+        print(f"[llmops] Pipeline run {res.pipeline_run_id} completed successfully.")
+        print(
+            f"[llmops] Curated examples: {res.curated_examples_count}, "
+            f"Evaluated: {res.evaluation_passed}, Promoted: {res.promoted_stage}"
         )
         return 0
 

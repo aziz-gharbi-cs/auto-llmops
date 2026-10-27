@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class LayerAResults(BaseModel):
@@ -66,9 +66,18 @@ class LayerEResults(BaseModel):
 class QualityGateThresholds(BaseModel):
     """Configurable pass/fail criteria for model promotion."""
 
-    min_retrieval_mrr: float = 0.5
-    min_generation_groundedness: float = 3.5
-    min_generation_correctness: float = 3.5
+    min_retrieval_mrr: float = Field(
+        default=0.5,
+        validation_alias=AliasChoices("min_retrieval_mrr", "min_mrr"),
+    )
+    min_generation_groundedness: float = Field(
+        default=3.5,
+        validation_alias=AliasChoices("min_generation_groundedness", "min_groundedness"),
+    )
+    min_generation_correctness: float = Field(
+        default=3.5,
+        validation_alias=AliasChoices("min_generation_correctness", "min_correctness"),
+    )
     min_candidate_win_margin: float = 0.0  # Non-negative delta vs baseline
     min_rag_grounding_rate: float = 0.75
 

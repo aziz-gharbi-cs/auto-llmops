@@ -37,3 +37,6 @@ def create_storage_adapter(
         )
 
     return LocalStorageAdapter(base_dir=base_dir)
+
+
+create_storage = create_storage_adapter

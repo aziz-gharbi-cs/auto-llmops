@@ -82,6 +82,13 @@ class TrainingResult(BaseModel):
     adapter_dir: str
     duration_seconds: float
     hardware_info: dict[str, Any] = Field(default_factory=dict)
+    manifest_path: str | None = None
+    success: bool = True
+
+    @property
+    def training_loss(self) -> float:
+        """Alias for final_train_loss."""
+        return self.final_train_loss
 
 
 class ModelManifest(BaseModel):
@@ -97,4 +104,15 @@ class ModelManifest(BaseModel):
     training_config_hash: str
     evaluation_report: dict[str, Any] | None = None
     approved: bool = False
+    stage: str = "candidate"
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    @property
+    def promoted(self) -> bool:
+        """Indicates if model has been promoted through quality gate."""
+        return self.approved
+
+    @property
+    def manifest(self) -> "ModelManifest":
+        """Self reference for promotion result compatibility."""
+        return self

@@ -34,6 +34,13 @@ class QualityReport(BaseModel):
     source_distribution: dict[str, int] = Field(default_factory=dict)
     chunk_token_stats: TokenStatistics = Field(default_factory=TokenStatistics)
     metadata: dict[str, Any] = Field(default_factory=dict)
+    chunks: list[DocumentChunk] = Field(default_factory=list, exclude=True)
+    documents: list[Document] = Field(default_factory=list, exclude=True)
+
+    @property
+    def document_count(self) -> int:
+        """Alias for total_documents."""
+        return self.total_documents
 
 
 def generate_quality_report(
@@ -70,4 +77,6 @@ def generate_quality_report(
         rejected_records=rejected,
         source_distribution=dict(source_counts),
         chunk_token_stats=token_stats,
+        chunks=list(chunks),
+        documents=list(documents),
     )

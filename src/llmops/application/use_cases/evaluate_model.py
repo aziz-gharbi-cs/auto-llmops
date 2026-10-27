@@ -21,6 +21,7 @@ from llmops.domain.models.evaluation import (
 from llmops.domain.models.retrieval import RetrievalQuery
 from llmops.domain.services.retrieval_metrics import calculate_retrieval_metrics
 from llmops.infrastructure.curation.judge import DataCurationJudge
+from llmops.infrastructure.llm.mock_llm import MockLLMClient
 
 logger = logging.getLogger(__name__)
 
@@ -30,14 +31,15 @@ class EvaluateModelUseCase:
 
     def __init__(
         self,
-        candidate_client: BaseLLMClient,
+        candidate_client: BaseLLMClient | None = None,
         base_client: BaseLLMClient | None = None,
+        baseline_client: BaseLLMClient | None = None,
         retrieval_service: RetrievalService | None = None,
         judge: DataCurationJudge | None = None,
         thresholds: QualityGateThresholds | None = None,
     ) -> None:
-        self.candidate_client = candidate_client
-        self.base_client = base_client or candidate_client
+        self.candidate_client = candidate_client or MockLLMClient()
+        self.base_client = base_client or baseline_client or self.candidate_client
         self.retrieval_service = retrieval_service
         self.judge = judge or DataCurationJudge(llm_client=self.candidate_client)
         self.thresholds = thresholds or QualityGateThresholds()
@@ -46,10 +48,13 @@ class EvaluateModelUseCase:
         self,
         test_dataset_path: str | Path,
         output_dir: str | Path = "artifacts/evaluation",
+        output_report_path: str | Path | None = None,
+        thresholds: QualityGateThresholds | None = None,
         model_version: str = "candidate-gemma-3-lora",
         dataset_version: str = "v1",
     ) -> EvaluationReport:
         """Run full evaluation suite on the held-out benchmark dataset."""
+        active_thresholds = thresholds or self.thresholds
         test_path = Path(test_dataset_path)
         out_dir = Path(output_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -73,28 +78,29 @@ class EvaluateModelUseCase:
         rejection_reasons: list[str] = []
         if not layer_a.passed:
             rejection_reasons.append("Layer A validation failed (schema/leakage/duplicates)")
-        if layer_b.mrr < self.thresholds.min_retrieval_mrr:
+        if layer_b.mrr < active_thresholds.min_retrieval_mrr:
             rejection_reasons.append(
-                f"Layer B MRR {layer_b.mrr:.2f} < threshold {self.thresholds.min_retrieval_mrr:.2f}"
+                f"Layer B MRR {layer_b.mrr:.2f} < "
+                f"threshold {active_thresholds.min_retrieval_mrr:.2f}"
             )
-        if layer_c.groundedness < self.thresholds.min_generation_groundedness:
+        if layer_c.groundedness < active_thresholds.min_generation_groundedness:
             rejection_reasons.append(
                 f"Layer C groundedness {layer_c.groundedness:.2f} < "
-                f"threshold {self.thresholds.min_generation_groundedness:.2f}"
+                f"threshold {active_thresholds.min_generation_groundedness:.2f}"
             )
-        if layer_c.correctness < self.thresholds.min_generation_correctness:
+        if layer_c.correctness < active_thresholds.min_generation_correctness:
             rejection_reasons.append(
                 f"Layer C correctness {layer_c.correctness:.2f} < "
-                f"threshold {self.thresholds.min_generation_correctness:.2f}"
+                f"threshold {active_thresholds.min_generation_correctness:.2f}"
             )
-        if layer_d.delta < self.thresholds.min_candidate_win_margin:
+        if layer_d.delta < active_thresholds.min_candidate_win_margin:
             rejection_reasons.append(
                 f"Layer D candidate regressed vs baseline (delta: {layer_d.delta:+.2f})"
             )
-        if layer_e.rag_grounding_rate < self.thresholds.min_rag_grounding_rate:
+        if layer_e.rag_grounding_rate < active_thresholds.min_rag_grounding_rate:
             rejection_reasons.append(
                 f"Layer E RAG grounding rate {layer_e.rag_grounding_rate:.2f} < "
-                f"threshold {self.thresholds.min_rag_grounding_rate:.2f}"
+                f"threshold {active_thresholds.min_rag_grounding_rate:.2f}"
             )
 
         passed = len(rejection_reasons) == 0
@@ -115,7 +121,11 @@ class EvaluateModelUseCase:
         )
 
         # Write machine-readable report
-        report_file = out_dir / "evaluation_report.json"
+        if output_report_path is not None:
+            report_file = Path(output_report_path)
+            report_file.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            report_file = out_dir / "evaluation_report.json"
         report_file.write_text(report.model_dump_json(indent=2), encoding="utf-8")
 
         logger.info(

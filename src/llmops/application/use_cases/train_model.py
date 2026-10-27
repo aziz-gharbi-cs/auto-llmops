@@ -22,6 +22,41 @@ from llmops.infrastructure.training.lora_trainer import LoRATrainer
 logger = logging.getLogger(__name__)
 
 
+class TrainingExecutionResult(tuple[Any, ...]):
+    """Tuple subclass returning (TrainingResult, ModelManifest) with convenience properties."""
+
+    def __new__(cls, result: TrainingResult, manifest: ModelManifest) -> "TrainingExecutionResult":
+        return super().__new__(cls, (result, manifest))
+
+    def __init__(self, result: TrainingResult, manifest: ModelManifest) -> None:
+        self.result = result
+        self.manifest = manifest
+
+    @property
+    def success(self) -> bool:
+        return self.result.success
+
+    @property
+    def training_loss(self) -> float:
+        return self.result.final_train_loss
+
+    @property
+    def run_id(self) -> str:
+        return self.result.run_id
+
+    @property
+    def model_version(self) -> str:
+        return self.result.model_version
+
+    @property
+    def manifest_path(self) -> str | None:
+        return self.result.manifest_path
+
+    @property
+    def adapter_dir(self) -> str:
+        return self.result.adapter_dir
+
+
 class TrainModelUseCase:
     """Orchestrates end-to-end model fine-tuning with experiment tracking and traceability."""
 
@@ -86,11 +121,28 @@ class TrainModelUseCase:
 
     def execute(
         self,
-        config: TrainingConfig,
-        train_dataset_path: str | Path = "data/processed/train.jsonl",
-        val_dataset_path: str | Path | None = "data/processed/val.jsonl",
+        config: TrainingConfig | None = None,
+        train_dataset_path: str | Path | None = None,
+        val_dataset_path: str | Path | None = None,
+        dataset_dir: str | Path | None = None,
+        output_dir: str | Path | None = None,
+        profile: str = "smoke",
     ) -> tuple[TrainingResult, ModelManifest]:
         """Execute training, track experiment with MLflow, and produce ModelManifest."""
+        if config is None:
+            config = TrainingConfig(profile=profile)
+            if output_dir:
+                config.output_dir = str(output_dir)
+
+        if dataset_dir is not None:
+            p_data = Path(dataset_dir)
+            train_dataset_path = p_data / "train.jsonl"
+            val_candidate = p_data / "val.jsonl"
+            if val_candidate.exists():
+                val_dataset_path = val_candidate
+
+        if train_dataset_path is None:
+            train_dataset_path = "data/processed/train.jsonl"
         train_path = Path(train_dataset_path)
         val_path = Path(val_dataset_path) if val_dataset_path else None
 
@@ -150,12 +202,13 @@ class TrainModelUseCase:
             manifest_dict = manifest.model_dump()
             manifest_dict["created_at"] = manifest.created_at.isoformat()
             manifest_yaml_path.write_text(yaml.safe_dump(manifest_dict), encoding="utf-8")
+            result.manifest_path = str(manifest_yaml_path)
 
             # Step 5: Log artifacts & manifest to tracker
             self.tracker.log_artifact(adapter_dir, artifact_path="adapter")
             self.tracker.log_model_manifest(manifest)
 
-            return result, manifest
+            return TrainingExecutionResult(result, manifest)
 
         finally:
             self.tracker.end_run()

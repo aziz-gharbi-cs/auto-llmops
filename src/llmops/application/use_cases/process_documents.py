@@ -4,6 +4,7 @@ import json
 import logging
 from pathlib import Path
 
+from llmops.domain.interfaces.storage import BaseStorage
 from llmops.domain.models.crawler import CrawlManifest
 from llmops.domain.models.document import Document, DocumentChunk
 from llmops.infrastructure.chunker.semantic_chunker import SemanticChunker
@@ -25,11 +26,13 @@ class ProcessDocumentsUseCase:
         dataset_version: str = "v1",
         target_chunk_size: int = 400,
         max_chunk_size: int = 600,
+        storage: BaseStorage | None = None,
     ) -> None:
         self.raw_dir = Path(raw_dir)
         self.interim_dir = Path(interim_dir)
         self.processed_dir = Path(processed_dir)
         self.dataset_version = dataset_version
+        self.storage = storage
 
         self.interim_dir.mkdir(parents=True, exist_ok=True)
         self.processed_dir.mkdir(parents=True, exist_ok=True)
@@ -52,8 +55,20 @@ class ProcessDocumentsUseCase:
                 logger.warning("Failed to load manifest at '%s': %s", manifest_file, exc)
         return manifests
 
-    def execute(self, source_name: str | None = None) -> QualityReport:
+    def execute(
+        self,
+        source_name: str | None = None,
+        raw_dir: str | Path | None = None,
+        output_dir: str | Path | None = None,
+        run_id: str | None = None,
+    ) -> QualityReport:
         """Execute full parsing, chunking, deduplication, and quality report generation."""
+        if raw_dir:
+            self.raw_dir = Path(raw_dir)
+        if output_dir:
+            self.processed_dir = Path(output_dir)
+            self.processed_dir.mkdir(parents=True, exist_ok=True)
+
         manifests = self.load_manifests()
         if source_name:
             manifests = [m for m in manifests if m.source_name.lower() == source_name.lower()]

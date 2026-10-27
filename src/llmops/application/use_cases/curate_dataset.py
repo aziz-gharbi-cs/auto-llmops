@@ -67,14 +67,20 @@ class CurateDatasetUseCase:
         chunks_path: str | Path = "data/processed/chunks.jsonl",
         output_dir: str | Path = "data/processed",
         pass_threshold: float = 3.5,
+        threshold: float | None = None,
         max_candidates: int | None = None,
+        chunks: list[DocumentChunk] | None = None,
+        run_id: str | None = None,
     ) -> DatasetSplitSummary:
         """Curate dataset from document chunks and write train/val/test splits."""
-        path_chunks = Path(chunks_path)
+        if threshold is not None:
+            pass_threshold = threshold
         path_out = Path(output_dir)
         path_out.mkdir(parents=True, exist_ok=True)
 
-        chunks = self.load_chunks(path_chunks)
+        if chunks is None:
+            path_chunks = Path(chunks_path)
+            chunks = self.load_chunks(path_chunks)
         if max_candidates is not None and max_candidates > 0:
             chunks = chunks[:max_candidates]
 
