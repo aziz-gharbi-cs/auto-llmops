@@ -172,6 +172,21 @@ def main(args: Sequence[str] | None = None) -> int:
             )
         return 0
 
+    if parsed_args.command == "validate":
+        from llmops.application.use_cases.process_documents import ProcessDocumentsUseCase
+
+        print(
+            f"[llmops] Processing raw documents and validating into '{parsed_args.dataset_path}'..."
+        )
+        process_use_case = ProcessDocumentsUseCase(processed_dir=parsed_args.dataset_path)
+        validation_report = process_use_case.execute()
+        print(
+            f"[llmops] Validation complete: {validation_report.total_documents} documents, "
+            f"{validation_report.total_chunks} chunks, "
+            f"{validation_report.exact_duplicates_removed} exact duplicates removed."
+        )
+        return 0
+
     print(f"[llmops] Executing subcommand '{parsed_args.command}'...")
     return 0
 

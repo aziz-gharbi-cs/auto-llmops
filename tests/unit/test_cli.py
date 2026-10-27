@@ -55,4 +55,4 @@ def test_cli_main_execution(capsys: pytest.CaptureFixture[str]) -> None:
     exit_code = main(["validate", "--dataset-path", "data/processed"])
     assert exit_code == 0
     captured = capsys.readouterr()
-    assert "Executing subcommand 'validate'" in captured.out
+    assert "Validation complete" in captured.out
