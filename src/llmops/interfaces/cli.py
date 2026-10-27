@@ -400,18 +400,27 @@ def main(args: Sequence[str] | None = None) -> int:
     if parsed_args.command == "serve":
         import uvicorn
 
-        from llmops.interfaces.api.app import create_app
-
         print(
             f"[llmops] Starting API gateway server on {parsed_args.host}:{parsed_args.port} "
             f"(reload={parsed_args.reload})..."
         )
-        app = create_app()
-        uvicorn.run(
-            app,
-            host=parsed_args.host,
-            port=parsed_args.port,
-        )
+        if parsed_args.reload:
+            uvicorn.run(
+                "llmops.interfaces.api.app:create_app",
+                factory=True,
+                host=parsed_args.host,
+                port=parsed_args.port,
+                reload=True,
+            )
+        else:
+            from llmops.interfaces.api.app import create_app
+
+            app = create_app()
+            uvicorn.run(
+                app,
+                host=parsed_args.host,
+                port=parsed_args.port,
+            )
         return 0
 
     if parsed_args.command == "pipeline":
