@@ -129,6 +129,18 @@ def create_parser() -> argparse.ArgumentParser:
         default="candidate",
         help="Model identifier or checkpoint path to evaluate.",
     )
+    eval_p.add_argument(
+        "--dataset",
+        type=str,
+        default="data/processed/test.jsonl",
+        help="Path to evaluation benchmark dataset (test.jsonl).",
+    )
+    eval_p.add_argument(
+        "--output-dir",
+        type=str,
+        default="artifacts/evaluation",
+        help="Path to directory where evaluation_report.json will be saved.",
+    )
 
     # Promote command
     promote_p = subparsers.add_parser(
@@ -146,6 +158,18 @@ def create_parser() -> argparse.ArgumentParser:
         choices=["staging", "production"],
         default="staging",
         help="Target promotion stage.",
+    )
+    promote_p.add_argument(
+        "--manifest-path",
+        type=str,
+        default=None,
+        help="Path to model manifest file.",
+    )
+    promote_p.add_argument(
+        "--report-path",
+        type=str,
+        default=None,
+        help="Path to evaluation report file.",
     )
 
     # Serve command
@@ -297,6 +321,50 @@ def main(args: Sequence[str] | None = None) -> int:
             f"(run ID: {result.run_id}). "
             f"Final train loss: {result.final_train_loss:.4f}. "
             f"Adapter saved to '{result.adapter_dir}'."
+        )
+        return 0
+
+    if parsed_args.command == "evaluate":
+        from llmops.application.use_cases.evaluate_model import EvaluateModelUseCase
+        from llmops.infrastructure.llm.mock_llm import MockLLMClient
+
+        print(
+            f"[llmops] Running multi-layer evaluation for '{parsed_args.model_id}' "
+            f"on '{parsed_args.dataset}'..."
+        )
+        eval_use_case = EvaluateModelUseCase(
+            candidate_client=MockLLMClient(model_name=parsed_args.model_id),
+            base_client=MockLLMClient(model_name="base-gemma-3-1b"),
+        )
+        report = eval_use_case.execute(
+            test_dataset_path=parsed_args.dataset,
+            output_dir=parsed_args.output_dir,
+            model_version=parsed_args.model_id,
+        )
+        status = "PASSED" if report.quality_gate_passed else "FAILED"
+        print(
+            f"[llmops] Evaluation complete: Quality Gate {status}. "
+            f"Recommendation: {report.recommendation}."
+        )
+        return 0 if report.quality_gate_passed else 1
+
+    if parsed_args.command == "promote":
+        from llmops.application.use_cases.promote_model import PromoteModelUseCase
+
+        print(
+            f"[llmops] Promoting model '{parsed_args.model_version}' "
+            f"to '{parsed_args.target_stage}'..."
+        )
+        promote_use_case = PromoteModelUseCase()
+        promoted_manifest = promote_use_case.execute(
+            model_version=parsed_args.model_version,
+            target_stage=parsed_args.target_stage,
+            manifest_path=parsed_args.manifest_path,
+            evaluation_report_path=parsed_args.report_path,
+        )
+        print(
+            f"[llmops] Promotion successful: model '{promoted_manifest.model_version}' "
+            f"approved for '{parsed_args.target_stage}'."
         )
         return 0
 

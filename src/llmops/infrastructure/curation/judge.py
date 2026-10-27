@@ -1,6 +1,7 @@
 """LLM-as-a-Judge adapter for evaluating synthetic Q&A candidate quality."""
 
 import logging
+import re
 from collections.abc import Sequence
 
 from llmops.domain.interfaces.llm import BaseLLMClient
@@ -78,13 +79,13 @@ class DataCurationJudge:
         prompt_version: str,
     ) -> tuple[JudgeScore, str]:
         """Deterministic heuristic fallback scoring based on token overlap and presence."""
-        resp_tokens = set(response.lower().split())
-        ctx_tokens = set(context.lower().split())
+        resp_tokens = set(re.findall(r"\w+", response.lower()))
+        ctx_tokens = set(re.findall(r"\w+", context.lower()))
 
         grounded_overlap = len(resp_tokens.intersection(ctx_tokens))
         has_min_length = len(instruction.strip()) >= 10 and len(response.strip()) >= 15
 
-        if has_min_length and grounded_overlap >= 3:
+        if has_min_length and grounded_overlap >= 2:
             score = JudgeScore(
                 relevance=4,
                 correctness=4,
