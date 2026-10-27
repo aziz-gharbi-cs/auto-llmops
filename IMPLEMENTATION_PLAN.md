@@ -2,7 +2,7 @@
 
 **Master Specification Source of Truth:** [`antigravity_llmops_master_build_spec.md`](antigravity_llmops_master_build_spec.md)  
 **Status:** In Progress  
-**Current Milestone:** Milestone 6 (Data Curation & LLM-as-a-Judge)
+**Current Milestone:** Milestone 8 (Multi-Layer Evaluation & Quality Gate)
 
 ---
 
@@ -17,7 +17,9 @@
 - Milestone 2 completed: text normalization, HTML/Markdown parsing with code-block preservation, heading-aware semantic chunking with provenance, exact (SHA-256) and near-duplicate (Jaccard) deduplication, dataset quality reporting.
 - Milestone 3 completed: `BaseStorage` port, `LocalStorageAdapter`, `S3StorageAdapter` with MinIO/S3 support, storage factory, `DatasetVersionManifest`, DVC pipeline (`dvc.yaml`, `params.yaml`), ADR 003, storage contract tests.
 - Milestone 4 completed: `BaseVectorStore`, `BaseEmbeddingModel`, `BaseReranker` ports, `QdrantVectorStore` with Qdrant REST API + Section 6 schema, `InMemoryVectorStore`, `SentenceTransformerEmbeddings`, `CrossEncoderReranker`, two-stage `RetrievalService`, IR metrics (Recall@K, Precision@K, MRR, nDCG), contract and unit tests.
-- Milestone 5 completed: `BaseLLMClient` port, `OllamaClient`, `VLLMClient`, `MockLLMClient`, versioned prompt management (`developer_assistant`, `rag_grounded_answer`), `RAGService` with citations and insufficient context detection, ADR 004, unit and contract tests (66 tests passing, 81% coverage).
+- Milestone 5 completed: `BaseLLMClient` port, `OllamaClient`, `VLLMClient`, `MockLLMClient`, versioned prompt management (`developer_assistant`, `rag_grounded_answer`), `RAGService` with citations and insufficient context detection, ADR 004, unit and contract tests.
+- Milestone 6 completed: synthetic developer Q&A generator, structured `DataCurationJudge` with multi-dimensional rubric, `DatasetSplitter` ensuring zero document-level data leakage, train/val/test export with external audit metadata isolation (`*_metadata.jsonl`), statistical dataset summary, ADR 005.
+- Milestone 7 completed: Gemma 3 parameter-efficient fine-tuning (LoRA / PEFT), `BaseTrainer` port with profile-driven execution (`smoke` for CPU/CI, `full` for CUDA GPU), `BaseExperimentTracker` port with `LocalExperimentTracker` and `MLflowTracker`, Section 23 machine-readable `ModelManifest` traceability contract, ADR 006 (98 tests passing, 81% overall coverage).
 
 ---
 
@@ -47,69 +49,26 @@
 - **Goal:** Integrate local LLM runtime (Ollama/vLLM) for grounded question-answering with citations and prompt versioning.
 - **Status:** Done (BaseLLMClient, Ollama & vLLM clients, PromptManager, versioned prompts, RAGService with citations and fallback, ADR 004, 66 tests passing).
 
-### Milestone 6: Data Curation & LLM-as-a-Judge [CURRENT]
-- **Goal:** Transform raw snapshots into canonical cleaned documents and semantic chunks with deduplication and quality reporting.
-- **Tasks:**
-  - HTML/Markdown parser converting raw crawl into canonical `Document` instances.
-  - Text normalizers (stripping boilerplate, code block preservation, anchor cleanup).
-  - Document chunker supporting semantic/heading-aware chunking with token counting and chunk metadata provenance.
-  - Exact deduplication (SHA-256 content hashes) and MinHash/LSH near-duplicate detection.
-  - Data quality reporter outputting token statistics, section counts, duplicate counts into `data/interim/` and `data/processed/`.
-  - Comprehensive unit tests.
-- **Acceptance Criteria:** Deterministic processing pipeline converts raw sources into deduplicated chunks with full provenance and generates a data quality report artifact.
-
-### Milestone 3: Dataset Versioning & Object Storage (DVC & S3/MinIO)
-- **Goal:** Abstract object storage interface and DVC pipeline for immutable versioned datasets.
-- **Tasks:**
-  - Storage adapter (`src/llmops/infrastructure/storage/`) supporting local filesystem and S3/MinIO via unified contract.
-  - Configure `dvc.yaml` and `params.yaml` tracking stages (`acquire`, `parse`, `chunk`, `dedup`).
-  - Implement metadata tracking tying dataset versions to commit hash, config hash, and storage URIs.
-- **Acceptance Criteria:** DVC pipeline reproduces artifacts deterministically; data is decoupled from git; dataset manifests record version provenance.
-
-### Milestone 4: Vector Retrieval Subsystem (Embeddings, Qdrant, Reranker)
-- **Goal:** Production-grade semantic search with Qdrant vector store, configurable embedding models, cross-encoder reranking, and retrieval metrics.
-- **Tasks:**
-  - Embedding adapter abstraction (`src/llmops/infrastructure/embeddings/`) with sentence-transformers implementation and mock/test provider.
-  - Qdrant adapter (`src/llmops/infrastructure/vector/`) supporting payload schema (document_id, chunk_id, provenance, hash).
-  - Cross-encoder reranker adapter (`src/llmops/infrastructure/reranker/`).
-  - Retrieval service implementing Top-N Qdrant search -> metadata filtering -> Top-K cross-encoder reranking.
-  - Retrieval evaluation suite calculating Recall@K, MRR, NDCG.
-- **Acceptance Criteria:** Chunk indexing into Qdrant, top-N retrieval with metadata filtering, reranking verified by integration and contract tests.
-
-### Milestone 5: Local Generation & RAG Subsystem
-- **Goal:** Integrate local LLM runtime (Ollama/OpenAI-compatible) for grounded question-answering with citations.
-- **Tasks:**
-  - LLM client abstraction (`src/llmops/infrastructure/llm/`) with Ollama and OpenAI-compatible adapters.
-  - Prompt management (`prompts/rag/`, `prompts/system/`) with prompt versioning.
-  - RAG service chaining retrieval -> context assembly -> prompt template -> LLM generation -> citation extraction.
-  - Grounding validation: return structured answer with citations and unanswerable fallback if retrieval evidence is insufficient.
-- **Acceptance Criteria:** End-to-end RAG query returns accurate answer citing retrieved source chunks, with fallback on insufficient context.
-
-### Milestone 6: Data Curation & LLM-as-a-Judge
+### Milestone 6: Data Curation & LLM-as-a-Judge [COMPLETED]
 - **Goal:** Synthetic instruction/Q&A generation and automated quality curation with structured LLM judging.
-- **Tasks:**
-  - Synthetic Q&A generator using canonical chunks and generation prompts (`prompts/generation/`).
-  - LLM-as-a-Judge evaluator (`prompts/judge/`) scoring relevance, correctness, groundedness, clarity on 1-5 scale.
-  - Pydantic models for structured judge decisions (`pass`/`fail`, scores, reason).
-  - Train/Val/Test splitter with strict leakage protection (deterministic exact/near duplicate detection and source boundary splits).
-  - Output curated dataset in standard messages format (`{"messages": [...]}`).
-- **Acceptance Criteria:** Synthetic candidate generation, strict quality threshold gating, leakage validation, and export of versioned JSONL datasets.
+- **Status:** Done (Synthetic generator, DataCurationJudge, DatasetSplitter with zero document leakage, external audit metadata files, ADR 005, 87 tests passing).
 
-### Milestone 7: Gemma 3 Parameter-Efficient Fine-Tuning (LoRA / PEFT)
-- **Goal:** Reproducible fine-tuning pipeline for Gemma 3 using Hugging Face PEFT/LoRA, Unsloth optimization, and MLflow experiment tracking.
-- **Tasks:**
-  - Training configuration schema (`configs/training.yaml`, `params.yaml`).
-  - Training module (`src/llmops/domain/training/`, `src/llmops/infrastructure/training/`) supporting CPU smoke profile and CUDA GPU profile.
-  - Adapter checkpoint export with metadata manifest (`training_config_hash`, base model revision, LoRA alpha/rank/dropout).
-  - MLflow logging for parameters, train/val loss curves, and artifact logging.
-- **Acceptance Criteria:** Training runs end-to-end under smoke mode (CPU/synthetic) and full mode (GPU/Gemma 3), producing adapter artifacts logged to MLflow.
+### Milestone 7: Gemma 3 Parameter-Efficient Fine-Tuning (LoRA / PEFT) [COMPLETED]
+- **Goal:** Reproducible fine-tuning pipeline for Gemma 3 using Hugging Face PEFT/LoRA, profile-driven CPU/GPU paths, MLflow tracking, and Section 23 ModelManifest traceability contract.
+- **Status:** Done (TrainingConfig, LoRATrainer, LocalExperimentTracker, MLflowTracker, TrainModelUseCase, ModelManifest, ADR 006, 98 tests passing).
 
-### Milestone 8: Multi-Layer Evaluation & Quality Gate
+### Milestone 8: Multi-Layer Evaluation & Quality Gate [CURRENT]
 - **Goal:** Comprehensive evaluation comparing Base Gemma 3 vs Fine-Tuned Gemma 3 vs Fine-Tuned + RAG, with deterministic quality gates.
 - **Tasks:**
   - Evaluation harness (`src/llmops/domain/evaluation/`) running held-out benchmark dataset.
-  - Layer A (deterministic syntax/schema checks), Layer B (retrieval metrics), Layer C (generation metrics), Layer D (model comparison), Layer E (RAG comparison).
-  - Automated quality gate evaluating candidate model against baseline thresholds; outputs machine-readable evaluation report.
+  - Multi-layer evaluation:
+    - Layer A: deterministic syntax/schema checks.
+    - Layer B: retrieval metrics (Recall@K, MRR, nDCG).
+    - Layer C: generation metrics (accuracy, formatting, latency).
+    - Layer D: model comparison (Base Gemma 3 vs Fine-Tuned Gemma 3).
+    - Layer E: system comparison (Fine-Tuned model vs Fine-Tuned + RAG).
+  - Automated quality gate evaluating candidate model against baseline thresholds; outputs machine-readable `evaluation_report.json`.
+  - Promotion logic (`llmops promote`) setting `approved: true` in `ModelManifest`.
 - **Acceptance Criteria:** Machine-readable evaluation report generated; regression detection triggers quality gate pass/fail.
 
 ### Milestone 9: Production Serving & Inference API
@@ -161,31 +120,3 @@
   - Promotion policy: automated retraining triggered only when data drift or quality thresholds warrant it.
   - End-to-end acceptance test covering the entire lifecycle from crawl to promoted model serving.
 - **Acceptance Criteria:** End-to-end integration test passes validating all 21 verification criteria from Section 78 of the master spec.
-
----
-
-## 3. Immediate Focus: Milestone 0 Work Plan
-1. Project layout directory creation:
-   - `src/llmops/{domain,application,infrastructure,interfaces}`
-   - `configs/`, `prompts/`, `data/{raw,interim,processed,evaluation,external}`
-   - `tests/{unit,integration,contract,evaluation}`
-   - `docs/{architecture,decisions,runbooks,api,development}`
-   - `docker/`, `deployment/`, `observability/`, `nginx/`, `.github/workflows/`
-2. `pyproject.toml` with:
-   - Package metadata (`llmops`)
-   - Dependencies: `fastapi`, `pydantic`, `uvicorn`, `sqlalchemy`, `psycopg`, `pydantic-settings`, `pyyaml`, `requests`, `httpx`
-   - Dependency groups: `dev` (ruff, mypy, pytest, pytest-cov, pre-commit), `ml` (torch, transformers, sentence-transformers, qdrant-client), `observability` (prometheus-client, opentelemetry-api)
-   - Tool settings for Ruff (line-length 100, target-version py313, lint rules), mypy (strict mode, py313), pytest (testpaths, cov config)
-3. Configuration files:
-   - `.gitignore`, `.pre-commit-config.yaml`, `.env.example`, `Makefile`, `scripts/check.ps1`
-   - Initial application configs in `configs/application.yaml`
-4. Core ADRs:
-   - `docs/decisions/001-python-runtime.md`
-   - `docs/decisions/002-clean-architecture.md`
-5. Foundation code:
-   - `src/llmops/__init__.py` (version declaration)
-   - `src/llmops/domain/` entities and base exceptions
-   - Basic CLI entrypoint (`src/llmops/interfaces/cli.py`)
-6. Quality Gate Verification:
-   - Unit tests under `tests/unit/`
-   - Run `ruff check`, `ruff format --check`, `mypy`, `pytest`
