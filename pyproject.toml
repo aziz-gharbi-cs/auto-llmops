@@ -1,0 +1,131 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llmops"
+version = "0.1.0"
+description = "Production-grade documentation-grounded developer assistance LLMOps platform"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [
+    { name = "Antigravity LLMOps Team" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "uvicorn[standard]>=0.34.0",
+    "sqlalchemy>=2.0.38",
+    "psycopg[binary]>=3.2.0",
+    "pyyaml>=6.0.2",
+    "httpx>=0.28.0",
+    "requests>=2.32.0",
+    "click>=8.1.8",
+    "rich>=13.9.0",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch>=2.6.0",
+    "transformers>=4.49.0",
+    "accelerate>=1.4.0",
+    "peft>=0.14.0",
+    "sentence-transformers>=3.4.0",
+    "qdrant-client>=1.13.0",
+]
+orchestration = [
+    "mlflow>=2.20.0",
+    "prefect>=3.2.0",
+    "boto3>=1.37.0",
+]
+observability = [
+    "prometheus-client>=0.21.0",
+    "opentelemetry-api>=1.30.0",
+    "opentelemetry-sdk>=1.30.0",
+    "opentelemetry-instrumentation-fastapi>=0.51b0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.0",
+    "mypy>=1.15.0",
+    "pytest>=8.3.0",
+    "pytest-cov>=6.0.0",
+    "pre-commit>=4.1.0",
+    "types-pyyaml>=6.0.12.20241230",
+    "types-requests>=2.32.0.20241016",
+]
+
+[project.scripts]
+llmops = "llmops.interfaces.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llmops"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "A",      # flake8-builtins
+    "C4",     # flake8-comprehensions
+    "PT",     # flake8-pytest-style
+    "RET",    # flake8-return
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "B008",   # do not perform function calls in argument defaults (needed for FastAPI Depends)
+    "RET505", # superfluous else return
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["llmops"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --cov=src/llmops --cov-report=term-missing --cov-report=xml"
+
+[tool.coverage.run]
+source = ["src/llmops"]
+omit = [
+    "*/tests/*",
+    "*/__main__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
