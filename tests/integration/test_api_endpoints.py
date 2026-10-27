@@ -262,3 +262,14 @@ def test_feedback_endpoint() -> None:
 
     assert resp.status == "received"
     assert resp.feedback_id.startswith("fb-")
+
+
+def test_playground_ui_endpoint() -> None:
+    from llmops.interfaces.api.routes import ui
+
+    ui_resp = ui.playground_ui()
+    assert ui_resp.status_code == 200
+    html_content = bytes(ui_resp.body).decode("utf-8")
+    assert "Antigravity LLMOps" in html_content
+    assert "Grounded RAG" in html_content
+    assert "Swagger Docs" in html_content

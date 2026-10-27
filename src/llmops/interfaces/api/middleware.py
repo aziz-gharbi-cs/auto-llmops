@@ -24,7 +24,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         path = request.url.path.rstrip("/")
-        if path in ("/docs", "/redoc") or request.url.path == "/openapi.json":
+        if path in ("", "/docs", "/redoc") or request.url.path == "/openapi.json":
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
                 "img-src 'self' data: https://fastapi.tiangolo.com; "

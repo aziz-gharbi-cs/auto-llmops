@@ -16,7 +16,7 @@ from llmops.interfaces.api.middleware import (
     RequestTracingMiddleware,
     SecurityHeadersMiddleware,
 )
-from llmops.interfaces.api.routes import feedback, health, inference, models
+from llmops.interfaces.api.routes import feedback, health, inference, models, ui
 
 
 def create_app(
@@ -67,6 +67,7 @@ def create_app(
     app.state.environment = environment
 
     # 3. Register Routers
+    app.include_router(ui.router)
     app.include_router(health.router)
     app.include_router(inference.router)
     app.include_router(models.router)
