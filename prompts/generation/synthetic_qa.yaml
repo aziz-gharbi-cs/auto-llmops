@@ -1,0 +1,17 @@
+name: "synthetic_qa"
+version: "1.0.0"
+description: "Generates realistic developer technical questions and comprehensive answers from a documentation chunk."
+template: |
+  You are an expert technical curriculum designer.
+  Based solely on the following documentation chunk from official framework docs, generate a realistic, high-quality developer question and a detailed, authoritative answer.
+
+  Source: {source_name}
+  Section: {section_heading}
+  Documentation Chunk:
+  {chunk_text}
+
+  Guidelines:
+  1. The question should represent a real-world developer problem or concept inquiry.
+  2. The answer must be completely accurate and directly grounded in the documentation chunk.
+  3. Include practical Python code snippets in the answer if code was present in the chunk.
+  4. Return valid JSON with two fields: "instruction" and "response".

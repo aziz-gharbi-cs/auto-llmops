@@ -1,6 +1,6 @@
 """Mock LLM client adapter for deterministic testing and offline CI."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TypeVar
 
 from pydantic import BaseModel
@@ -17,11 +17,11 @@ class MockLLMClient(BaseLLMClient):
         self,
         model_name: str = "mock-gemma-3-1b",
         default_response: str = "This is a grounded mock answer citing [c1].",
-        structured_payload: dict[str, object] | None = None,
+        structured_payload: Mapping[str, object] | None = None,
     ) -> None:
         self._model_name = model_name
         self.default_response = default_response
-        self.structured_payload = structured_payload or {}
+        self.structured_payload = dict(structured_payload) if structured_payload else {}
         self.recorded_calls: list[list[dict[str, str]]] = []
 
     @property

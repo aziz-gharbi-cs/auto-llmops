@@ -70,10 +70,28 @@ def create_parser() -> argparse.ArgumentParser:
         help="Generate synthetic Q&A and filter candidates with LLM-as-a-Judge.",
     )
     curate_p.add_argument(
+        "--chunks",
+        type=str,
+        default="data/processed/chunks.jsonl",
+        help="Path to input chunks JSONL file.",
+    )
+    curate_p.add_argument(
+        "--output-dir",
+        type=str,
+        default="data/processed",
+        help="Output directory for train/val/test splits and summary.",
+    )
+    curate_p.add_argument(
         "--threshold",
         type=float,
-        default=4.0,
+        default=3.5,
         help="Minimum overall quality threshold for acceptance.",
+    )
+    curate_p.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Maximum candidate chunks to process.",
     )
 
     # Train command
@@ -216,6 +234,31 @@ def main(args: Sequence[str] | None = None) -> int:
         )
         count = service.index_chunks(chunks)
         print(f"[llmops] Indexing complete: {count} chunks indexed.")
+        return 0
+
+    if parsed_args.command == "curate":
+        from llmops.application.use_cases.curate_dataset import CurateDatasetUseCase
+        from llmops.infrastructure.llm.mock_llm import MockLLMClient
+
+        print(
+            f"[llmops] Curating dataset from '{parsed_args.chunks}' "
+            f"(threshold: {parsed_args.threshold})..."
+        )
+        curate_use_case = CurateDatasetUseCase(
+            generator_client=MockLLMClient(model_name="gemma-3-synthetic-gen"),
+            judge_client=MockLLMClient(model_name="gemma-3-curation-judge"),
+        )
+        summary = curate_use_case.execute(
+            chunks_path=parsed_args.chunks,
+            output_dir=parsed_args.output_dir,
+            pass_threshold=parsed_args.threshold,
+            max_candidates=parsed_args.limit,
+        )
+        print(
+            f"[llmops] Curation complete: {summary.passed_candidates}/{summary.total_candidates} "
+            f"passed ({summary.pass_rate * 100:.1f}%). "
+            f"Train: {summary.train_count}, Val: {summary.val_count}, Test: {summary.test_count}."
+        )
         return 0
 
     print(f"[llmops] Executing subcommand '{parsed_args.command}'...")

@@ -1,0 +1,31 @@
+name: "data_curation_judge"
+version: "1.0.0"
+description: "LLM-as-a-Judge prompt evaluating synthetic developer Q&A candidates for training dataset admission."
+template: |
+  You are an impartial, strict LLM-as-a-Judge evaluating a generated developer Q&A pair against authoritative source documentation.
+
+  Documentation Context:
+  {context}
+
+  Generated Developer Question / Instruction:
+  {instruction}
+
+  Generated Assistant Answer:
+  {response}
+
+  Rubric (Score each dimension from 1 to 5):
+  - relevance: Is the question relevant to developer workflows and answered by the context?
+  - correctness: Is the technical answer factually accurate according to modern Python standards?
+  - groundedness: Is the answer strictly derived from the context without inventing APIs or hallucinations?
+  - instruction_following: Does the answer directly address every part of the question?
+  - clarity: Is the answer well-structured, easy to read, with properly formatted code blocks?
+
+  Output valid JSON containing:
+  - "relevance": int (1-5)
+  - "correctness": int (1-5)
+  - "groundedness": int (1-5)
+  - "instruction_following": int (1-5)
+  - "clarity": int (1-5)
+  - "overall": float (average of the 5 scores)
+  - "pass": bool (true if overall >= {threshold} and groundedness >= 4 and correctness >= 4, else false)
+  - "reason": str (short justification explaining the score)
