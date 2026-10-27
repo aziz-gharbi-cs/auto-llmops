@@ -1,0 +1,38 @@
+name: GPU Model Fine-Tuning
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Hardware Profile (smoke vs full)"
+        required: true
+        default: "full"
+        type: choice
+        options:
+          - smoke
+          - full
+      base_model:
+        description: "Base Model Identifier"
+        required: false
+        default: "google/gemma-3-1b-it"
+
+jobs:
+  train-lora:
+    name: LoRA Fine-Tuning Job
+    runs-on: [self-hosted, gpu]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install PyTorch & Unsloth GPU Dependencies
+        run: uv sync --all-groups
+
+      - name: Run Fine-Tuning Pipeline
+        run: |
+          uv run llmops train --profile ${{ inputs.profile }} --config configs/training.yaml --dataset-dir data/curated --output-dir models/checkpoints

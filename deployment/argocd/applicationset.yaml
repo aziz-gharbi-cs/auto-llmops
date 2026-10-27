@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: llmops-environments
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - env: dev
+            targetRevision: main
+            valuesFile: values-dev.yaml
+            namespace: llmops-dev
+          - env: staging
+            targetRevision: staging
+            valuesFile: values-staging.yaml
+            namespace: llmops-staging
+          - env: prod
+            targetRevision: production
+            valuesFile: values-prod.yaml
+            namespace: llmops-prod
+  template:
+    metadata:
+      name: "llmops-{{env}}"
+      labels:
+        environment: "{{env}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/company/llmops.git
+        targetRevision: "{{targetRevision}}"
+        path: deployment/helm/llmops
+        helm:
+          valueFiles:
+            - values.yaml
+            - "{{valuesFile}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

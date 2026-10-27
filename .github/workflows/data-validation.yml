@@ -1,0 +1,34 @@
+name: Data Validation
+
+on:
+  push:
+    paths:
+      - "data/**"
+      - "configs/crawler.yaml"
+      - "src/llmops/domain/models/crawler.py"
+      - "src/llmops/domain/models/document.py"
+  pull_request:
+    paths:
+      - "data/**"
+
+jobs:
+  validate-data:
+    name: Validate Dataset Integrity & Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Run Contract & Processing Tests
+        run: uv run pytest tests/contract/test_manifest_contract.py tests/integration/test_processing_pipeline.py -v

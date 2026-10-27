@@ -1,0 +1,47 @@
+name: GitOps Release & Promotion
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: "Target Environment (staging vs production)"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: "Immutable Image Git SHA"
+        required: true
+      model_version:
+        description: "Approved Model Version"
+        required: true
+        default: "gemma-3-lora-v1"
+
+permissions:
+  contents: write
+
+jobs:
+  promote-release:
+    name: Update GitOps Deployment Values
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_environment }}
+
+      - name: Update Helm values with immutable tag and model version
+        run: |
+          VALUES_FILE="deployment/helm/llmops/values-${{ inputs.target_environment }}.yaml"
+          echo "Updating $VALUES_FILE..."
+          sed -i 's/ACTIVE_MODEL_VERSION:.*/ACTIVE_MODEL_VERSION: "${{ inputs.model_version }}"/' "$VALUES_FILE"
+
+      - name: Commit and push deployment update for Argo CD
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deployment/helm/llmops/values-${{ inputs.target_environment }}.yaml
+          git commit -m "chore(release): promote image ${{ inputs.image_tag }} and model ${{ inputs.model_version }} to ${{ inputs.target_environment }}"
+          git push origin ${{ inputs.target_environment }}
